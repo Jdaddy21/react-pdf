@@ -2,7 +2,7 @@
 
 # React-PDF
 
-Display PDFs in your React app as easily as if they were images.
+Display PDFs in your React app as easily as if they were images. Bro.
 
 ## Lost?
 
