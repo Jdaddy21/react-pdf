@@ -1,20 +1,27 @@
-'use client';
+"use client";
 
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
-import makeEventProps from 'make-event-props';
-import makeCancellable from 'make-cancellable-promise';
-import clsx from 'clsx';
-import invariant from 'tiny-invariant';
-import warning from 'warning';
-import { dequal } from 'dequal';
-import * as pdfjs from 'pdfjs-dist';
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+} from "react";
+import makeEventProps from "make-event-props";
+import makeCancellable from "make-cancellable-promise";
+import clsx from "clsx";
+import invariant from "tiny-invariant";
+import warning from "warning";
+import { dequal } from "dequal";
+import * as pdfjs from "pdfjs-dist";
 
-import DocumentContext from './DocumentContext.js';
+import DocumentContext from "./DocumentContext.js";
 
-import Message from './Message.js';
+import Message from "./Message.js";
 
-import LinkService from './LinkService.js';
-import PasswordResponses from './PasswordResponses.js';
+import LinkService from "./LinkService.js";
+import PasswordResponses from "./PasswordResponses.js";
 
 import {
   cancelRunningTask,
@@ -25,13 +32,15 @@ import {
   isBrowser,
   isDataURI,
   loadFromFile,
-} from './shared/utils.js';
+  moveEndElementToSelectionEnd,
+  resetTextLayer,
+} from "./shared/utils.js";
 
-import useResolver from './shared/hooks/useResolver.js';
+import useResolver from "./shared/hooks/useResolver.js";
 
-import type { PDFDocumentProxy } from 'pdfjs-dist';
-import type { DocumentInitParameters } from 'pdfjs-dist/types/src/display/api.js';
-import type { EventProps } from 'make-event-props';
+import type { PDFDocumentProxy } from "pdfjs-dist";
+import type { DocumentInitParameters } from "pdfjs-dist/types/src/display/api.js";
+import type { EventProps } from "make-event-props";
 import type {
   ClassName,
   DocumentCallback,
@@ -51,13 +60,16 @@ import type {
   RenderMode,
   ScrollPageIntoViewArgs,
   Source,
-} from './shared/types.js';
+} from "./shared/types.js";
 
 const { PDFDataRangeTransport } = pdfjs;
 
 type OnItemClick = (args: OnItemClickArgs) => void;
 
-type OnPassword = (callback: OnPasswordCallback, reason: PasswordResponse) => void;
+type OnPassword = (
+  callback: OnPasswordCallback,
+  reason: PasswordResponse
+) => void;
 
 type OnSourceError = OnError;
 
@@ -217,12 +229,12 @@ export type DocumentProps = {
 const defaultOnPassword: OnPassword = (callback, reason) => {
   switch (reason) {
     case PasswordResponses.NEED_PASSWORD: {
-      const password = prompt('Enter the password to open this PDF file.');
+      const password = prompt("Enter the password to open this PDF file.");
       callback(password);
       break;
     }
     case PasswordResponses.INCORRECT_PASSWORD: {
-      const password = prompt('Invalid password. Please try again.');
+      const password = prompt("Invalid password. Please try again.");
       callback(password);
       break;
     }
@@ -232,9 +244,9 @@ const defaultOnPassword: OnPassword = (callback, reason) => {
 
 function isParameterObject(file: File): file is Source {
   return (
-    typeof file === 'object' &&
+    typeof file === "object" &&
     file !== null &&
-    ('data' in file || 'range' in file || 'url' in file)
+    ("data" in file || "range" in file || "url" in file)
   );
 }
 
@@ -246,20 +258,22 @@ const Document: React.ForwardRefExoticComponent<
     React.RefAttributes<{
       linkService: React.RefObject<LinkService>;
       pages: React.RefObject<HTMLDivElement[]>;
-      viewer: React.RefObject<{ scrollPageIntoView: (args: ScrollPageIntoViewArgs) => void }>;
+      viewer: React.RefObject<{
+        scrollPageIntoView: (args: ScrollPageIntoViewArgs) => void;
+      }>;
     }>
 > = forwardRef(function Document(
   {
     children,
     className,
-    error = 'Failed to load PDF file.',
+    error = "Failed to load PDF file.",
     externalLinkRel,
     externalLinkTarget,
     file,
     inputRef,
     imageResourcesPath,
-    loading = 'Loading PDF…',
-    noData = 'No PDF file specified.',
+    loading = "Loading PDF…",
+    noData = "No PDF file specified.",
     onItemClick,
     onLoadError: onLoadErrorProps,
     onLoadProgress,
@@ -273,7 +287,7 @@ const Document: React.ForwardRefExoticComponent<
     scale,
     ...otherProps
   },
-  ref,
+  ref
 ) {
   const [sourceState, sourceDispatch] = useResolver<Source | null>();
   const { value: source, error: sourceError } = sourceState;
@@ -284,13 +298,14 @@ const Document: React.ForwardRefExoticComponent<
 
   const pages = useRef<HTMLDivElement[]>([]);
 
+  const prevRangeRef = useRef<Range | undefined>(undefined);
   const prevFile = useRef<File | undefined>(undefined);
   const prevOptions = useRef<Options | undefined>(undefined);
 
   if (file && file !== prevFile.current && isParameterObject(file)) {
     warning(
       !dequal(file, prevFile.current),
-      `File prop passed to <Document /> changed, but it's equal to previous one. This might result in unnecessary reloads. Consider memoizing the value passed to "file" prop.`,
+      `File prop passed to <Document /> changed, but it's equal to previous one. This might result in unnecessary reloads. Consider memoizing the value passed to "file" prop.`
     );
 
     prevFile.current = file;
@@ -300,7 +315,7 @@ const Document: React.ForwardRefExoticComponent<
   if (options && options !== prevOptions.current) {
     warning(
       !dequal(options, prevOptions.current),
-      `Options prop passed to <Document /> changed, but it's equal to previous one. This might result in unnecessary reloads. Consider memoizing the value passed to "options" prop.`,
+      `Options prop passed to <Document /> changed, but it's equal to previous one. This might result in unnecessary reloads. Consider memoizing the value passed to "options" prop.`
     );
 
     prevOptions.current = options;
@@ -328,7 +343,7 @@ const Document: React.ForwardRefExoticComponent<
 
       warning(
         false,
-        `An internal link leading to page ${pageNumber} was clicked, but neither <Document> was provided with onItemClick nor it was able to find the page within itself. Either provide onItemClick to <Document> and handle navigating by yourself or ensure that all pages are rendered within <Document>.`,
+        `An internal link leading to page ${pageNumber} was clicked, but neither <Document> was provided with onItemClick nor it was able to find the page within itself. Either provide onItemClick to <Document> and handle navigating by yourself or ensure that all pages are rendered within <Document>.`
       );
     },
   });
@@ -340,7 +355,7 @@ const Document: React.ForwardRefExoticComponent<
       pages,
       viewer,
     }),
-    [],
+    []
   );
 
   /**
@@ -369,7 +384,7 @@ const Document: React.ForwardRefExoticComponent<
   }
 
   function resetSource() {
-    sourceDispatch({ type: 'RESET' });
+    sourceDispatch({ type: "RESET" });
   }
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: See https://github.com/biomejs/biome/issues/3080
@@ -381,7 +396,7 @@ const Document: React.ForwardRefExoticComponent<
     }
 
     // File is a string
-    if (typeof file === 'string') {
+    if (typeof file === "string") {
       if (isDataURI(file)) {
         const fileByteString = dataURItoByteString(file);
         return { data: fileByteString };
@@ -416,17 +431,17 @@ const Document: React.ForwardRefExoticComponent<
 
     // At this point, file must be an object
     invariant(
-      typeof file === 'object',
-      'Invalid parameter in file, need either Uint8Array, string or a parameter object',
+      typeof file === "object",
+      "Invalid parameter in file, need either Uint8Array, string or a parameter object"
     );
 
     invariant(
       isParameterObject(file),
-      'Invalid parameter object: need either .data, .range or .url',
+      "Invalid parameter object: need either .data, .range or .url"
     );
 
     // File .url is a string
-    if ('url' in file && typeof file.url === 'string') {
+    if ("url" in file && typeof file.url === "string") {
       if (isDataURI(file.url)) {
         const { url, ...otherParams } = file;
         const fileByteString = dataURItoByteString(url);
@@ -444,10 +459,10 @@ const Document: React.ForwardRefExoticComponent<
 
     cancellable.promise
       .then((nextSource) => {
-        sourceDispatch({ type: 'RESOLVE', value: nextSource });
+        sourceDispatch({ type: "RESOLVE", value: nextSource });
       })
       .catch((error) => {
-        sourceDispatch({ type: 'REJECT', error });
+        sourceDispatch({ type: "REJECT", error });
       });
 
     return () => {
@@ -457,7 +472,7 @@ const Document: React.ForwardRefExoticComponent<
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: Omitted callbacks so they are not called every time they change
   useEffect(() => {
-    if (typeof source === 'undefined') {
+    if (typeof source === "undefined") {
       return;
     }
 
@@ -505,9 +520,9 @@ const Document: React.ForwardRefExoticComponent<
   // biome-ignore lint/correctness/useExhaustiveDependencies: useEffect intentionally triggered on source change
   useEffect(
     function resetDocument() {
-      pdfDispatch({ type: 'RESET' });
+      pdfDispatch({ type: "RESET" });
     },
-    [pdfDispatch, source],
+    [pdfDispatch, source]
   );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: Omitted callbacks so they are not called every time they change
@@ -532,26 +547,26 @@ const Document: React.ForwardRefExoticComponent<
 
       const loadingPromise = loadingTask.promise
         .then((nextPdf) => {
-          pdfDispatch({ type: 'RESOLVE', value: nextPdf });
+          pdfDispatch({ type: "RESOLVE", value: nextPdf });
         })
         .catch((error) => {
           if (loadingTask.destroyed) {
             return;
           }
 
-          pdfDispatch({ type: 'REJECT', error });
+          pdfDispatch({ type: "REJECT", error });
         });
 
       return () => {
         loadingPromise.finally(() => loadingTask.destroy());
       };
     },
-    [options, pdfDispatch, source],
+    [options, pdfDispatch, source]
   );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: Omitted callbacks so they are not called every time they change
   useEffect(() => {
-    if (typeof pdf === 'undefined') {
+    if (typeof pdf === "undefined") {
       return;
     }
 
@@ -569,7 +584,7 @@ const Document: React.ForwardRefExoticComponent<
       linkService.current.setExternalLinkRel(externalLinkRel);
       linkService.current.setExternalLinkTarget(externalLinkTarget);
     },
-    [externalLinkRel, externalLinkTarget],
+    [externalLinkRel, externalLinkTarget]
   );
 
   const registerPage = useCallback((pageIndex: number, ref: HTMLDivElement) => {
@@ -579,6 +594,8 @@ const Document: React.ForwardRefExoticComponent<
   const unregisterPage = useCallback((pageIndex: number) => {
     delete pages.current[pageIndex];
   }, []);
+
+  const textLayers = useMemo(() => new Map(), [pdf]);
 
   const childContext = useMemo(
     () => ({
@@ -591,33 +608,88 @@ const Document: React.ForwardRefExoticComponent<
       rotate,
       scale,
       unregisterPage,
+      textLayers
     }),
-    [imageResourcesPath, onItemClick, pdf, registerPage, renderMode, rotate, scale, unregisterPage],
+    [
+      imageResourcesPath,
+      onItemClick,
+      pdf,
+      registerPage,
+      renderMode,
+      rotate,
+      scale,
+      unregisterPage,
+      textLayers
+    ]
   );
+
+  useEffect(() => {
+    const handlePointerup = () => {
+      textLayers.forEach(resetTextLayer);
+    };
+
+    const handleSelectionChange = () => {
+      const selection = document.getSelection()!;
+      if (selection.rangeCount === 0) {
+        textLayers.forEach((end: HTMLElement, textlayer: HTMLElement) => {
+          if (textlayer.isConnected) {
+            resetTextLayer(end, textlayer);
+          } else {
+            textLayers.delete(textlayer);
+          }
+        });
+        return;
+      }
+      const clonedRange = moveEndElementToSelectionEnd(textLayers, prevRangeRef.current);
+
+      prevRangeRef.current = clonedRange;
+    };
+    document.addEventListener('pointerup', handlePointerup);
+    document.addEventListener('selectionchange', handleSelectionChange);
+
+    return () => {
+      document.removeEventListener('selectionchange', handleSelectionChange);
+      document.removeEventListener('pointerup', handlePointerup);
+    };
+  }, [textLayers]);
 
   const eventProps = useMemo(
     () => makeEventProps(otherProps, () => pdf),
     // biome-ignore lint/correctness/useExhaustiveDependencies: FIXME
-    [otherProps, pdf],
+    [otherProps, pdf]
   );
 
   function renderChildren() {
-    return <DocumentContext.Provider value={childContext}>{children}</DocumentContext.Provider>;
+    return (
+      <DocumentContext.Provider value={childContext}>
+        {children}
+      </DocumentContext.Provider>
+    );
   }
 
   function renderContent() {
     if (!file) {
-      return <Message type="no-data">{typeof noData === 'function' ? noData() : noData}</Message>;
+      return (
+        <Message type="no-data">
+          {typeof noData === "function" ? noData() : noData}
+        </Message>
+      );
     }
 
     if (pdf === undefined || pdf === null) {
       return (
-        <Message type="loading">{typeof loading === 'function' ? loading() : loading}</Message>
+        <Message type="loading">
+          {typeof loading === "function" ? loading() : loading}
+        </Message>
       );
     }
 
     if (pdf === false) {
-      return <Message type="error">{typeof error === 'function' ? error() : error}</Message>;
+      return (
+        <Message type="error">
+          {typeof error === "function" ? error() : error}
+        </Message>
+      );
     }
 
     return renderChildren();
@@ -625,7 +697,7 @@ const Document: React.ForwardRefExoticComponent<
 
   return (
     <div
-      className={clsx('react-pdf__Document', className)}
+      className={clsx("react-pdf__Document", className)}
       // Assertion is needed for React 18 compatibility
       ref={inputRef as React.Ref<HTMLDivElement>}
       {...eventProps}
