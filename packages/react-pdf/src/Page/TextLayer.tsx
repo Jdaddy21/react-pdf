@@ -1,29 +1,39 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
-import makeCancellable from 'make-cancellable-promise';
-import clsx from 'clsx';
-import invariant from 'tiny-invariant';
-import warning from 'warning';
-import * as pdfjs from 'pdfjs-dist';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+} from "react";
+import makeCancellable from "make-cancellable-promise";
+import clsx from "clsx";
+import invariant from "tiny-invariant";
+import warning from "warning";
+import * as pdfjs from "pdfjs-dist";
 
-import usePageContext from '../shared/hooks/usePageContext.js';
-import useDocumentContext from '../shared/hooks/useDocumentContext.js';
-import useResolver from '../shared/hooks/useResolver.js';
-import { cancelRunningTask } from '../shared/utils.js';
+import usePageContext from "../shared/hooks/usePageContext.js";
+import useDocumentContext from "../shared/hooks/useDocumentContext.js";
+import useResolver from "../shared/hooks/useResolver.js";
+import { cancelRunningTask } from "../shared/utils.js";
 
-import type { TextContent, TextItem, TextMarkedContent } from 'pdfjs-dist/types/src/display/api.js';
+import type {
+  TextContent,
+  TextItem,
+  TextMarkedContent,
+} from "pdfjs-dist/types/src/display/api.js";
 
 function isTextItem(item: TextItem | TextMarkedContent): item is TextItem {
-  return 'str' in item;
+  return "str" in item;
 }
 
 export default function TextLayer(): React.ReactElement {
   const pageContext = usePageContext();
   const documentContext = useDocumentContext();
 
-  invariant(pageContext, 'Unable to find Page context.');
-  invariant(documentContext, 'Unable to find Document context.');
+  invariant(pageContext, "Unable to find Page context.");
+  invariant(documentContext, "Unable to find Document context.");
 
   const {
     customTextRenderer,
@@ -40,8 +50,10 @@ export default function TextLayer(): React.ReactElement {
 
   const { textLayers } = documentContext;
 
-
-  invariant(page, 'Attempted to load page text content, but no page was specified.');
+  invariant(
+    page,
+    "Attempted to load page text content, but no page was specified."
+  );
 
   const [textContentState, textContentDispatch] = useResolver<TextContent>();
   const { value: textContent, error: textContentError } = textContentState;
@@ -49,10 +61,12 @@ export default function TextLayer(): React.ReactElement {
 
   warning(
     Number.parseInt(
-      window.getComputedStyle(document.body).getPropertyValue('--react-pdf-text-layer'),
-      10,
+      window
+        .getComputedStyle(document.body)
+        .getPropertyValue("--react-pdf-text-layer"),
+      10
     ) === 1,
-    'TextLayer styles not found. Read more: https://github.com/wojtekmaj/react-pdf#support-for-text-layer',
+    "TextLayer styles not found. Read more: https://github.com/wojtekmaj/react-pdf#support-for-text-layer"
   );
 
   /**
@@ -88,9 +102,9 @@ export default function TextLayer(): React.ReactElement {
   // biome-ignore lint/correctness/useExhaustiveDependencies: useEffect intentionally triggered on page change
   useEffect(
     function resetTextContent() {
-      textContentDispatch({ type: 'RESET' });
+      textContentDispatch({ type: "RESET" });
     },
-    [page, textContentDispatch],
+    [page, textContentDispatch]
   );
 
   useEffect(
@@ -104,15 +118,15 @@ export default function TextLayer(): React.ReactElement {
 
       cancellable.promise
         .then((nextTextContent) => {
-          textContentDispatch({ type: 'RESOLVE', value: nextTextContent });
+          textContentDispatch({ type: "RESOLVE", value: nextTextContent });
         })
         .catch((error) => {
-          textContentDispatch({ type: 'REJECT', error });
+          textContentDispatch({ type: "REJECT", error });
         });
 
       return () => cancelRunningTask(runningTask);
     },
-    [page, textContentDispatch],
+    [page, textContentDispatch]
   );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: Omitted callbacks so they are not called every time they change
@@ -149,7 +163,7 @@ export default function TextLayer(): React.ReactElement {
         onRenderTextLayerError(error);
       }
     },
-    [onRenderTextLayerError],
+    [onRenderTextLayerError]
   );
 
   function onMouseDown() {
@@ -159,7 +173,7 @@ export default function TextLayer(): React.ReactElement {
       return;
     }
 
-    layer.classList.add('selecting');
+    layer.classList.add("selecting");
   }
 
   function onMouseUp() {
@@ -169,12 +183,12 @@ export default function TextLayer(): React.ReactElement {
       return;
     }
 
-    layer.classList.remove('selecting');
+    layer.classList.remove("selecting");
   }
 
   const viewport = useMemo(
     () => page.getViewport({ scale, rotation: rotate }),
-    [page, rotate, scale],
+    [page, rotate, scale]
   );
 
   useLayoutEffect(
@@ -189,9 +203,11 @@ export default function TextLayer(): React.ReactElement {
         return;
       }
 
-      layer.innerHTML = '';
+      layer.innerHTML = "";
 
-      const textContentSource = page.streamTextContent({ includeMarkedContent: true });
+      const textContentSource = page.streamTextContent({
+        includeMarkedContent: true,
+      });
 
       const parameters = {
         container: layer,
@@ -205,8 +221,8 @@ export default function TextLayer(): React.ReactElement {
       cancellable
         .render()
         .then(() => {
-          const end = document.createElement('div');
-          end.className = 'endOfContent';
+          const end = document.createElement("div");
+          end.className = "endOfContent";
           layer.append(end);
 
           textLayers.set(layer, end);
@@ -254,13 +270,13 @@ export default function TextLayer(): React.ReactElement {
       pageNumber,
       textContent,
       viewport,
-    ],
+    ]
   );
 
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: False positive caused by non interactive wrapper listening for bubbling events
     <div
-      className={clsx('react-pdf__Page__textContent', 'textLayer')}
+      className={clsx("react-pdf__Page__textContent", "textLayer")}
       onMouseUp={onMouseUp}
       onMouseDown={onMouseDown}
       ref={layerElement}

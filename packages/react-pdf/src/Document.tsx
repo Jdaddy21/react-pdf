@@ -608,7 +608,7 @@ const Document: React.ForwardRefExoticComponent<
       rotate,
       scale,
       unregisterPage,
-      textLayers
+      textLayers,
     }),
     [
       imageResourcesPath,
@@ -619,7 +619,7 @@ const Document: React.ForwardRefExoticComponent<
       rotate,
       scale,
       unregisterPage,
-      textLayers
+      textLayers,
     ]
   );
 
@@ -628,8 +628,14 @@ const Document: React.ForwardRefExoticComponent<
       textLayers.forEach(resetTextLayer);
     };
 
+    const handlePointerdown = (event: PointerEvent) => {
+      const selection = document.getSelection();
+      // console.log(selection)
+    };
+
     const handleSelectionChange = () => {
       const selection = document.getSelection()!;
+
       if (selection.rangeCount === 0) {
         textLayers.forEach((end: HTMLElement, textlayer: HTMLElement) => {
           if (textlayer.isConnected) {
@@ -640,16 +646,20 @@ const Document: React.ForwardRefExoticComponent<
         });
         return;
       }
-      const clonedRange = moveEndElementToSelectionEnd(textLayers, prevRangeRef.current);
+      const clonedRange = moveEndElementToSelectionEnd(
+        textLayers,
+        prevRangeRef.current
+      );
 
       prevRangeRef.current = clonedRange;
     };
-    document.addEventListener('pointerup', handlePointerup);
-    document.addEventListener('selectionchange', handleSelectionChange);
+    document.addEventListener("pointerdown", handlePointerdown);
+    document.addEventListener("pointerup", handlePointerup);
+    document.addEventListener("selectionchange", handleSelectionChange);
 
     return () => {
-      document.removeEventListener('selectionchange', handleSelectionChange);
-      document.removeEventListener('pointerup', handlePointerup);
+      document.removeEventListener("selectionchange", handleSelectionChange);
+      document.removeEventListener("pointerup", handlePointerup);
     };
   }, [textLayers]);
 

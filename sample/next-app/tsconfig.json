@@ -18,6 +18,6 @@
     "target": "es2018",
     "verbatimModuleSyntax": true
   },
-  "include": [".", ".next/types/**/*.ts"],
+  "include": [".", ".next/types/**/*.ts", "public/pdfjs/pdf.worker.min.js"],
   "exclude": ["node_modules"]
 }

@@ -2,18 +2,16 @@
 
 import { useCallback, useId, useState } from 'react';
 import { useResizeObserver } from '@wojtekmaj/react-hooks';
-import { pdfjs, Document, Page } from 'react-pdf';
-import 'react-pdf/dist/Page/AnnotationLayer.css';
-import 'react-pdf/dist/Page/TextLayer.css';
+import { pdfjs, Document, Page } from 'jeremy-react-pdf';
+import 'jeremy-react-pdf/dist/Page/AnnotationLayer.css';
+import 'jeremy-react-pdf/dist/Page/TextLayer.css';
 
 import './Sample.css';
 
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url,
-).toString();
+
+pdfjs.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.min.js";
 
 const options = {
   cMapUrl: '/cmaps/',

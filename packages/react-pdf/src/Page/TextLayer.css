@@ -51,11 +51,42 @@
 .textLayer :is(span, br) {
   color: transparent;
   position: absolute;
+  /* background-color: red; */
+  /* color: red; */
+  padding-top: 3px;
+  padding-bottom: 2px;
   white-space: pre;
   cursor: text;
   margin: 0;
   transform-origin: 0 0;
 }
+
+/* I added this to highlight the text */
+.textLayer span::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -15px;
+  width: 30px;
+  bottom: -2px;
+  z-index: -1; 
+  /* background-color: pink; */
+  /* opacity: 0.5; */
+}
+
+
+.textLayer span::after {
+  content: ' ';
+  position: absolute;
+  top: -2px;
+  width: 30px;
+  right: -15px;
+  bottom: -2px;
+  z-index: -1;
+  /* background-color: pink; */
+    /* opacity: 0.5; */
+}
+
 
 /* Only necessary in Google Chrome, see issue 14205, and most unfortunately
  * the problem doesn't show up in "text" reference tests. */
@@ -102,9 +133,8 @@
   inset: 100% 0 0;
   z-index: -1;
   cursor: default;
-  user-select: none;
+  /* user-select: none; */
 }
-
 .textLayer.selecting .endOfContent {
   top: 0;
 }
@@ -116,4 +146,35 @@
   width: 0;
   height: 0;
   display: none;
+}
+/* 
+.markedContent {
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  -moz-user-select: none;
+}
+
+
+.markedContent * {
+  pointer-events: auto;
+  user-select: text;
+  -webkit-user-select: text;
+  -ms-user-select: text;
+  -moz-user-select: text;
+} */
+
+.annotationLayer {
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  -moz-user-select: none;
+}
+
+.annotationLayer * {
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  -moz-user-select: none;
 }

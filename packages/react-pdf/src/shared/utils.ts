@@ -1,18 +1,19 @@
-import invariant from 'tiny-invariant';
-import warning from 'warning';
+import invariant from "tiny-invariant";
+import warning from "warning";
 
-import type { PDFPageProxy } from 'pdfjs-dist';
-import type { PageCallback } from './types.js';
+import type { PDFPageProxy } from "pdfjs-dist";
+import type { PageCallback } from "./types.js";
 
 /**
  * Checks if we're running in a browser environment.
  */
-export const isBrowser: boolean = typeof window !== 'undefined';
+export const isBrowser: boolean = typeof window !== "undefined";
 
 /**
  * Checks whether we're running from a local file system.
  */
-export const isLocalFileSystem: boolean = isBrowser && window.location.protocol === 'file:';
+export const isLocalFileSystem: boolean =
+  isBrowser && window.location.protocol === "file:";
 
 /**
  * Checks whether a variable is defined.
@@ -20,7 +21,7 @@ export const isLocalFileSystem: boolean = isBrowser && window.location.protocol 
  * @param {*} variable Variable to check
  */
 export function isDefined<T>(variable: T | undefined): variable is T {
-  return typeof variable !== 'undefined';
+  return typeof variable !== "undefined";
 }
 
 /**
@@ -38,7 +39,7 @@ export function isProvided<T>(variable: T | null | undefined): variable is T {
  * @param {*} variable Variable to check
  */
 export function isString(variable: unknown): variable is string {
-  return typeof variable === 'string';
+  return typeof variable === "string";
 }
 
 /**
@@ -56,7 +57,7 @@ export function isArrayBuffer(variable: unknown): variable is ArrayBuffer {
  * @param {*} variable Variable to check
  */
 export function isBlob(variable: unknown): variable is Blob {
-  invariant(isBrowser, 'isBlob can only be used in a browser environment');
+  invariant(isBrowser, "isBlob can only be used in a browser environment");
 
   return variable instanceof Blob;
 }
@@ -71,12 +72,12 @@ export function isDataURI(variable: unknown): variable is `data:${string}` {
 }
 
 export function dataURItoByteString(dataURI: unknown): string {
-  invariant(isDataURI(dataURI), 'Invalid data URI.');
+  invariant(isDataURI(dataURI), "Invalid data URI.");
 
-  const [headersString = '', dataString = ''] = dataURI.split(',');
-  const headers = headersString.split(';');
+  const [headersString = "", dataString = ""] = dataURI.split(",");
+  const headers = headersString.split(";");
 
-  if (headers.indexOf('base64') !== -1) {
+  if (headers.indexOf("base64") !== -1) {
     return atob(dataString);
   }
 
@@ -88,46 +89,51 @@ export function getDevicePixelRatio(): number {
 }
 
 const allowFileAccessFromFilesTip =
-  'On Chromium based browsers, you can use --allow-file-access-from-files flag for debugging purposes.';
+  "On Chromium based browsers, you can use --allow-file-access-from-files flag for debugging purposes.";
 
 export function displayCORSWarning(): void {
   warning(
     !isLocalFileSystem,
-    `Loading PDF as base64 strings/URLs may not work on protocols other than HTTP/HTTPS. ${allowFileAccessFromFilesTip}`,
+    `Loading PDF as base64 strings/URLs may not work on protocols other than HTTP/HTTPS. ${allowFileAccessFromFilesTip}`
   );
 }
 
 export function displayWorkerWarning(): void {
   warning(
     !isLocalFileSystem,
-    `Loading PDF.js worker may not work on protocols other than HTTP/HTTPS. ${allowFileAccessFromFilesTip}`,
+    `Loading PDF.js worker may not work on protocols other than HTTP/HTTPS. ${allowFileAccessFromFilesTip}`
   );
 }
 
-export function cancelRunningTask(runningTask?: { cancel?: () => void } | null): void {
+export function cancelRunningTask(
+  runningTask?: { cancel?: () => void } | null
+): void {
   if (runningTask?.cancel) runningTask.cancel();
 }
 
-export function makePageCallback(page: PDFPageProxy, scale: number): PageCallback {
-  Object.defineProperty(page, 'width', {
+export function makePageCallback(
+  page: PDFPageProxy,
+  scale: number
+): PageCallback {
+  Object.defineProperty(page, "width", {
     get() {
       return this.view[2] * scale;
     },
     configurable: true,
   });
-  Object.defineProperty(page, 'height', {
+  Object.defineProperty(page, "height", {
     get() {
       return this.view[3] * scale;
     },
     configurable: true,
   });
-  Object.defineProperty(page, 'originalWidth', {
+  Object.defineProperty(page, "originalWidth", {
     get() {
       return this.view[2];
     },
     configurable: true,
   });
-  Object.defineProperty(page, 'originalHeight', {
+  Object.defineProperty(page, "originalHeight", {
     get() {
       return this.view[3];
     },
@@ -137,7 +143,7 @@ export function makePageCallback(page: PDFPageProxy, scale: number): PageCallbac
 }
 
 export function isCancelException(error: Error): boolean {
-  return error.name === 'RenderingCancelledException';
+  return error.name === "RenderingCancelledException";
 }
 
 export function loadFromFile(file: Blob): Promise<ArrayBuffer> {
@@ -146,7 +152,7 @@ export function loadFromFile(file: Blob): Promise<ArrayBuffer> {
 
     reader.onload = () => {
       if (!reader.result) {
-        return reject(new Error('Error while reading a file.'));
+        return reject(new Error("Error while reading a file."));
       }
 
       resolve(reader.result as ArrayBuffer);
@@ -154,24 +160,28 @@ export function loadFromFile(file: Blob): Promise<ArrayBuffer> {
 
     reader.onerror = (event) => {
       if (!event.target) {
-        return reject(new Error('Error while reading a file.'));
+        return reject(new Error("Error while reading a file."));
       }
 
       const { error } = event.target;
 
       if (!error) {
-        return reject(new Error('Error while reading a file.'));
+        return reject(new Error("Error while reading a file."));
       }
 
       switch (error.code) {
         case error.NOT_FOUND_ERR:
-          return reject(new Error('Error while reading a file: File not found.'));
+          return reject(
+            new Error("Error while reading a file: File not found.")
+          );
         case error.SECURITY_ERR:
-          return reject(new Error('Error while reading a file: Security error.'));
+          return reject(
+            new Error("Error while reading a file: Security error.")
+          );
         case error.ABORT_ERR:
-          return reject(new Error('Error while reading a file: Aborted.'));
+          return reject(new Error("Error while reading a file: Aborted."));
         default:
-          return reject(new Error('Error while reading a file.'));
+          return reject(new Error("Error while reading a file."));
       }
     };
 
@@ -179,47 +189,49 @@ export function loadFromFile(file: Blob): Promise<ArrayBuffer> {
   });
 }
 
-
 // Get current browser
 export function getBrowser(): string {
   var userAgent = navigator.userAgent;
   var browserName;
 
-  if (userAgent.indexOf('Firefox') > -1) {
-    browserName = 'Firefox';
-  } else if (userAgent.indexOf('SamsungBrowser') > -1) {
-    browserName = 'Samsung';
-  } else if (userAgent.indexOf('Opera') > -1 || userAgent.indexOf('OPR') > -1) {
-    browserName = 'Opera';
-  } else if (userAgent.indexOf('Trident') > -1) {
-    browserName = 'IE';
-  } else if (userAgent.indexOf('Edge') > -1) {
-    browserName = 'Edge';
-  } else if (userAgent.indexOf('Chrome') > -1) {
-    browserName = 'Chrome';
-  } else if (userAgent.indexOf('Safari') > -1) {
-    browserName = 'Safari';
+  if (userAgent.indexOf("Firefox") > -1) {
+    browserName = "Firefox";
+  } else if (userAgent.indexOf("SamsungBrowser") > -1) {
+    browserName = "Samsung";
+  } else if (userAgent.indexOf("Opera") > -1 || userAgent.indexOf("OPR") > -1) {
+    browserName = "Opera";
+  } else if (userAgent.indexOf("Trident") > -1) {
+    browserName = "IE";
+  } else if (userAgent.indexOf("Edge") > -1) {
+    browserName = "Edge";
+  } else if (userAgent.indexOf("Chrome") > -1) {
+    browserName = "Chrome";
+  } else if (userAgent.indexOf("Safari") > -1) {
+    browserName = "Safari";
   } else {
-    browserName = 'Unknown';
+    browserName = "Unknown";
   }
 
   return browserName;
 }
 
 // reset text layer
-export const resetTextLayer = (end: HTMLElement, textLayer: HTMLElement): void => {
-  if (getBrowser() === 'Firefox') {
+export const resetTextLayer = (
+  end: HTMLElement,
+  textLayer: HTMLElement
+): void => {
+  if (getBrowser() === "Firefox") {
     textLayer.append(end);
-    end.style.width = '';
-    end.style.height = '';
+    end.style.width = "";
+    end.style.height = "";
   }
-  end.classList.remove('active');
+  end.classList.remove("active");
 };
 
 // move .endOfContent to right after selection range
 export const moveEndElementToSelectionEnd = (
   textLayers: Map<HTMLElement, HTMLElement>,
-  prevRange?: Range,
+  prevRange?: Range
 ): Range | undefined => {
   const selection = document.getSelection()!;
 
@@ -227,7 +239,10 @@ export const moveEndElementToSelectionEnd = (
   for (let i = 0; i < selection.rangeCount; i++) {
     const range = selection.getRangeAt(i);
     for (const textLayerDiv of textLayers.keys()) {
-      if (!activeTextLayers.has(textLayerDiv) && range.intersectsNode(textLayerDiv)) {
+      if (
+        !activeTextLayers.has(textLayerDiv) &&
+        range.intersectsNode(textLayerDiv)
+      ) {
         activeTextLayers.add(textLayerDiv);
       }
     }
@@ -235,25 +250,27 @@ export const moveEndElementToSelectionEnd = (
 
   for (const [textLayerDiv, endDiv] of textLayers) {
     if (activeTextLayers.has(textLayerDiv)) {
-      endDiv.classList.add('active');
+      endDiv.classList.add("active");
     } else {
       resetTextLayer(endDiv, textLayerDiv);
     }
   }
 
-  if (getBrowser() === 'Firefox') {
+  if (getBrowser() === "Firefox") {
     return;
   }
 
   const range = selection.getRangeAt(0);
 
   if (
-    range.startContainer.nodeType !== Node.TEXT_NODE ||
-    range.endContainer.nodeType !== Node.TEXT_NODE
+    range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE &&
+    (range.commonAncestorContainer as Element).classList.contains(
+      "react-pdf__Document"
+    )
   ) {
-
-    return; 
+    return;
   }
+
 
   const modifyStart =
     prevRange &&
@@ -264,12 +281,20 @@ export const moveEndElementToSelectionEnd = (
     anchor = anchor.parentNode!;
   }
 
-  const parentTextLayer = anchor.parentElement!.closest('.textLayer') as HTMLDivElement;
+  // console.log(range);
+  // console.log(anchor);
+
+  const parentTextLayer = anchor.parentElement!.closest(
+    ".textLayer"
+  ) as HTMLDivElement;
   const endDiv = textLayers.get(parentTextLayer);
   if (endDiv && parentTextLayer) {
     endDiv.style.width = parentTextLayer.style.width;
     endDiv.style.height = parentTextLayer.style.height;
-    anchor.parentElement!.insertBefore(endDiv, modifyStart ? anchor : anchor.nextSibling);
+    anchor.parentElement!.insertBefore(
+      endDiv,
+      modifyStart ? anchor : anchor.nextSibling
+    );
   }
 
   return range.cloneRange();
